@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>All my love, Pnoelle</title>
+<style>
+body { font-family: Century Gothic, sans-serif; text-align:center; background:#222; color:#fff; }
+#login, #journal { margin-top:40px; }
+textarea { width:80%; height:150px; margin:10px 0; }
+button,input { padding:8px 15px; margin:5px; cursor:pointer; }
+input[type="file"] { margin:10px 0; }
+.hidden { display:none; }
+#entries { margin-top:30px; text-align:left; width:80%; margin:auto; background:rgba(0,0,0,0.6); padding:15px; border-radius:10px; max-height:500px; overflow-y:auto; }
+.entry { padding:12px; border-bottom:1px solid rgba(255,255,255,0.3); }
+.entry img,.entry video { max-width:100%; margin-top:10px; border-radius:8px; }
+</style>
+</head>
+<body>
+
+<h1 id="siteTitle">All my love, Pnoelle</h1>
+
+<!-- Login -->
+<div id="login">
+<p>Enter Password</p>
+<input type="password" id="password">
+<button onclick="checkPassword()">Login</button>
+</div>
+
+<!-- Journal Section -->
+<div id="journal" class="hidden">
+<!-- Customisation Options (Author only) -->
+<div id="customOptions" class="hidden">
+<h2>Customisation</h2>
+<label>Change Journal Title: </label>
+<input type="text" id="titleInput" placeholder="Enter new title">
+<button onclick="changeTitle()">Update</button><br>
+
+<label>Upload Background Image: </label>
+<input type="file" id="bgInput" accept="image/*"><br>
+
+<label>Upload Background Music (MP3): </label>
+<input type="file" id="musicInput" accept="audio/mpeg"><br>
+</div>
+
+<!-- Post Section (Author only) -->
+<div id="postSection" class="hidden">
+<h2>Write a New Entry</h2>
+<textarea id="entryText" placeholder="Write your thoughts..."></textarea><br>
+<input type="file" id="mediaInput" accept="image/*,video/*" multiple><br>
+<button onclick="saveEntry()">Save Entry</button>
+</div>
+
+<!-- Entries -->
+<div id="entries"></div>
+</div>
+
+<!-- Background Music -->
+<audio id="bgMusic" autoplay loop></audio>
+
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+
+<script>
+// --- PASSWORDS ---
+const authorPassword = "pnoelle2696";
+const viewerPassword = "gabk.69";
+let role = null;
+
+// --- ELEMENTS ---
+const loginDiv = document.getElementById("login");
+const journalDiv = document.getElementById("journal");
+const postSection = document.getElementById("postSection");
+const customOptions = document.getElementById("customOptions");
+const entriesDiv = document.getElementById("entries");
+const entryText = document.getElementById("entryText");
+const mediaInput = document.getElementById("mediaInput");
+const siteTitle = document.getElementById("siteTitle");
+const bgInput = document.getElementById("bgInput");
+const musicInput = document.getElementById("musicInput");
+const bgMusic = document.getElementById("bgMusic");
+
+// --- FIREBASE CONFIG ---
+const firebaseConfig = {
+  apiKey: "AIzaSyDW4gGoDqKjkeQHLYcWFoMCWWRby1pEQJM",
+  authDomain: "allmylovethroughwords.firebaseapp.com",
+  projectId: "allmylovethroughwords",
+  storageBucket: "allmylovethroughwords.firebasestorage.app",
+  messagingSenderId: "875011434235",
+  appId: "1:875011434235:web:c265458cf8b0f55127725e",
+  measurementId: "G-4D7EXQQFHZ"
+};
+
+// --- LOGIN ---
+function checkPassword() {
+const input = document.getElementById("password").value;
+if (input === authorPassword) { role="author"; showJournal(true); }
+else if (input === viewerPassword) { role="viewer"; showJournal(false); }
+else alert("Wrong password!");
+}
+
+function showJournal(isAuthor) {
+loginDiv.classList.add("hidden");
+journalDiv.classList.remove("hidden");
+if(isAuthor) { postSection.classList.remove("hidden"); customOptions.classList.remove("hidden"); }
+loadEntries();
+}
+
+// --- SAVE ENTRY ---
+function saveEntry() {
+const text = entryText.value.trim();
+if(!text) return alert("Write something first!");
+const files = mediaInput.files;
+const mediaFiles = [];
+
+if(files.length>0){
+const promises = [];
+for(let file of files){
+const path = `media/${Date.now()}_${file.name}`;
+const uploadTask = storage.ref(path).put(file);
+promises.push(uploadTask.then(()=>storage.ref(path).getDownloadURL()).then(url=>mediaFiles.push({type:file.type,data:url})));
+}
+Promise.all(promises).then(()=>saveToFirestore(text, mediaFiles));
+} else {
+saveToFirestore(text, []);
+}
+}
+
+function saveToFirestore(text, media) {
+db.collection("entries").add({
+text: text,
+date: new Date().toLocaleString(),
+media: media
+}).then(()=>{
+entryText.value="";
+mediaInput.value="";
+});
+}
+
+// --- LOAD ENTRIES ---
+function loadEntries(){
+db.collection("entries").orderBy("date","desc").onSnapshot(snapshot=>{
+entriesDiv.innerHTML="";
+snapshot.forEach(doc=>{
+const e = doc.data();
+const div = document.createElement("div");
+div.className="entry";
+div.innerHTML=`<strong>${e.date}</strong><br>${e.text}`;
+if(e.media) e.media.forEach(m=>{
+if(m.type.startsWith("image/")){ const img=document.createElement("img"); img.src=m.data; div.appendChild(img); }
+else if(m.type.startsWith("video/")){ const v=document.createElement("video"); v.src=m.data; v.controls=true; div.appendChild(v); }
+});
+entriesDiv.appendChild(div);
+});
+});
+}
+
+// --- CUSTOMISATION ---
+function changeTitle(){
+const t=document.getElementById("titleInput").value.trim();
+if(t){ siteTitle.textContent=t; document.getElementById("titleInput").value=""; }
+}
+
+// Background Image
+bgInput.addEventListener("change", function(){
+const file = bgInput.files[0];
+if(file){
+const reader = new FileReader();
+reader.onload = ()=>{ document.body.style.background=`url('${reader.result}') no-repeat center center fixed`; document.body.style.backgroundSize="cover"; }
+reader.readAsDataURL(file);
+}
+});
+
+// Background Music
+musicInput.addEventListener("change", function(){
+const file = musicInput.files[0];
+if(file){
+const reader = new FileReader();
+reader.onload = ()=>{ bgMusic.src=reader.result; bgMusic.play(); }
+reader.readAsDataURL(file);
+}
+});
+</script>
+</body>
+</html>

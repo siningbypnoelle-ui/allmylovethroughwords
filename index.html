@@ -7,49 +7,46 @@
 body {
   font-family: "Century Gothic", sans-serif;
   text-align: center;
-  background: linear-gradient(135deg, #d16ba5, #86a8e7, #5ffbf1);
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
   color: #fff;
   margin: 0;
-  padding: 0;
+  padding: 20px;
 }
 #login, #journal {
-  margin-top: 40px;
+  margin-top: 30px;
 }
-textarea {
-  width: 80%;
-  height: 120px;
-  margin: 10px 0;
-  border-radius: 8px;
-  border: none;
-  padding: 10px;
-}
-button, input {
+input, button {
   padding: 8px 15px;
   margin: 5px;
-  cursor: pointer;
-  border-radius: 6px;
   border: none;
+  border-radius: 6px;
+  cursor: pointer;
 }
 .hidden {
   display: none;
 }
 #entries {
   margin-top: 30px;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  display: flex;
+  flex-direction: column-reverse; /* ✅ ensures newest is on top */
+  align-items: center;
   gap: 20px;
-  padding: 20px;
 }
 .entry {
   background: rgba(0,0,0,0.6);
-  padding: 15px;
+  padding: 20px;
   border-radius: 12px;
+  max-width: 700px;
   text-align: left;
+  line-height: 1.6;
+  white-space: pre-line; /* preserves line breaks */
 }
-.entry img, .entry video {
-  width: 100%;
-  margin-top: 10px;
-  border-radius: 8px;
+.entry strong {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 1.1em;
 }
 </style>
 </head>
@@ -59,128 +56,57 @@ button, input {
 
 <!-- Login -->
 <div id="login">
-  <p>PW is your IG handle:</p>
+  <p>Enter password:</p>
   <input type="password" id="password">
   <button onclick="checkPassword()">Login</button>
 </div>
 
 <!-- Journal -->
 <div id="journal" class="hidden">
-  <!-- Post Section (Author only) -->
-  <div id="postSection" class="hidden">
-    <h2>Write a New Entry</h2>
-    <textarea id="entryText" placeholder="Write your thoughts..."></textarea><br>
-    <input type="file" id="mediaInput" accept="image/*,video/*" multiple><br>
-    <button onclick="saveEntry()">Save Entry</button>
+  <div id="entries">
+
+    <!-- ✨ First Journal Entry -->
+    <div class="entry">
+      <strong>8th – 9th September</strong>
+      It’s the 8th of September and I’m supposed to be at lectures… I couldn’t make myself come in and pretend that something’s gonna get through my head when the thoughts of you are blocking the way… Instead I sit here in lecture room 4, on my spot down on the floor, the spot wherein I usually watch you sleep in peace hoping that the call wouldn’t end until I get back home so I could stare at you a little bit longer. I’m here on my spot watching the show you told me to watch, there were scenes that I should feel happy and “kilig” but those emotions don’t seem to come to me… All I know is, watching this show makes me feel like I’m still closer to you even though you’re countries away and as if you didn’t create a distance between how we were…
+
+      By the way, the dress I’m going to wear for make sister’s wedding came right before I left for campus, I tried it on and in an instant my thoughts were “My baby would like this” oh how I loved for you to see it. It is know the 9th of September, I woke up at 1am, in fact I always do, like clockwork. “Why?” You might ask, it’s because I trained myself to wake up at these hours so I could talk to you. I also just had a long shower, not because I was doing a lot but because I was feeling a lot… I also ran earlier, hoping that I could run away from my emotions, I’m in utter pain, I miss you so much, I don’t want things to end. I hope you message me and say that everything will be okay and that you miss me as well… 
+
+      I know I’m stronger than this, I know I should at least try to go to lectures, but just this once I want to let the pain and sadness consume me… I’ve been holding it for too long and I’m afraid that I might just burst out. I promise it’s just this once.
+    </div>
+
   </div>
-
-  <!-- Entries -->
-  <div id="entries"></div>
 </div>
-
-<!-- Firebase SDKs -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 
 <script>
 // --- PASSWORDS ---
 const authorPassword = "pnoelle2696";
 const viewerPassword = "gabk.69";
-let role = null;
 
 // --- ELEMENTS ---
 const loginDiv = document.getElementById("login");
 const journalDiv = document.getElementById("journal");
-const postSection = document.getElementById("postSection");
-const entriesDiv = document.getElementById("entries");
-const entryText = document.getElementById("entryText");
-const mediaInput = document.getElementById("mediaInput");
-
-// --- FIREBASE CONFIG ---
-const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
-};
-
-// Initialize Firebase
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-const storage = firebase.storage();
 
 // --- LOGIN ---
 function checkPassword() {
   const input = document.getElementById("password").value;
-  if (input === authorPassword) { role = "author"; showJournal(true); }
-  else if (input === viewerPassword) { role = "viewer"; showJournal(false); }
-  else alert("Wrong password!");
-}
-
-function showJournal(isAuthor) {
-  loginDiv.classList.add("hidden");
-  journalDiv.classList.remove("hidden");
-  if (isAuthor) { postSection.classList.remove("hidden"); }
-  loadEntries();
-}
-
-// --- SAVE ENTRY ---
-async function saveEntry() {
-  const text = entryText.value.trim();
-  if (!text && mediaInput.files.length === 0) {
-    return alert("Write something or upload media!");
+  if (input === authorPassword || input === viewerPassword) {
+    loginDiv.classList.add("hidden");
+    journalDiv.classList.remove("hidden");
+  } else {
+    alert("Wrong password!");
   }
-
-  let mediaFiles = [];
-  const files = mediaInput.files;
-
-  for (let file of files) {
-    const path = `media/${Date.now()}_${file.name}`;
-    const snapshot = await storage.ref(path).put(file);
-    const url = await snapshot.ref.getDownloadURL();
-    mediaFiles.push({ type: file.type, url });
-  }
-
-  await db.collection("entries").add({
-    text,
-    timestamp: Date.now(),
-    media: mediaFiles
-  });
-
-  entryText.value = "";
-  mediaInput.value = "";
 }
 
-// --- LOAD ENTRIES ---
-function loadEntries() {
-  db.collection("entries").orderBy("timestamp", "desc").onSnapshot(snapshot => {
-    entriesDiv.innerHTML = "";
-    snapshot.forEach(doc => {
-      const e = doc.data();
-      const div = document.createElement("div");
-      div.className = "entry";
-      div.innerHTML = `<strong>${new Date(e.timestamp).toLocaleString()}</strong><br>${e.text || ""}`;
-      if (e.media) {
-        e.media.forEach(m => {
-          if (m.type.startsWith("image/")) {
-            const img = document.createElement("img");
-            img.src = m.url;
-            div.appendChild(img);
-          } else if (m.type.startsWith("video/")) {
-            const video = document.createElement("video");
-            video.src = m.url;
-            video.controls = true;
-            div.appendChild(video);
-          }
-        });
-      }
-      entriesDiv.appendChild(div);
-    });
-  });
-}
+// --- RANDOM BACKGROUND IMAGES ---
+const backgrounds = [
+  "https://source.unsplash.com/1600x900/?sky,clouds",
+  "https://source.unsplash.com/1600x900/?flowers",
+  "https://source.unsplash.com/1600x900/?nature",
+  "https://source.unsplash.com/1600x900/?aesthetic",
+  "https://source.unsplash.com/1600x900/?stars,night"
+];
+document.body.style.backgroundImage = `url('${backgrounds[Math.floor(Math.random()*backgrounds.length)]}')`;
 </script>
 </body>
 </html>

@@ -7,9 +7,10 @@
 body {
   font-family: "Century Gothic", sans-serif;
   text-align: center;
-  background: url('YOUR_NETLIFY_BACKGROUND_URL') no-repeat center center fixed;
+  /* Simple aesthetic gradient background */
+  background: linear-gradient(135deg, #f3e5f5, #e1bee7);
   background-size: cover;
-  color: #fff;
+  color: #333; /* softer color for contrast */
   margin: 0;
   padding: 20px;
 }
@@ -23,6 +24,10 @@ input, button {
   border-radius: 6px;
   cursor: pointer;
 }
+button {
+  background-color: #d1c4e9;
+  color: #333;
+}
 .hidden {
   display: none;
 }
@@ -34,18 +39,21 @@ input, button {
   gap: 20px;
 }
 .entry {
-  background: rgba(0,0,0,0.6);
+  background: rgba(255, 255, 255, 0.8);
   padding: 20px;
   border-radius: 12px;
   max-width: 700px;
   text-align: left;
   line-height: 1.6;
   white-space: pre-line; /* keeps line breaks */
+  color: #333;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
 }
 .entry strong {
   display: block;
   margin-bottom: 10px;
   font-size: 1.1em;
+  color: #4a148c;
 }
 </style>
 </head>

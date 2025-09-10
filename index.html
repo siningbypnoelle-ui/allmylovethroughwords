@@ -21,7 +21,7 @@ input[type="file"] { margin:10px 0; }
 
 <!-- Login -->
 <div id="login">
-<p>Enter Password</p>
+<p>Password is your ig handle</p>
 <input type="password" id="password">
 <button onclick="checkPassword()">Login</button>
 </div>
@@ -135,7 +135,13 @@ media: media
 }).then(()=>{
 entryText.value="";
 mediaInput.value="";
-});
+}).catch(err => {
+
+    console.error("Error saving entry:", err);
+
+    alert("Failed to save entry. Check console for details.");
+
+  });
 }
 
 // --- LOAD ENTRIES ---
@@ -183,4 +189,5 @@ reader.readAsDataURL(file);
 });
 </script>
 </body>
+
 </html>

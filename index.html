@@ -28,21 +28,17 @@ input[type="file"] { margin:10px 0; }
 
 <!-- Journal Section -->
 <div id="journal" class="hidden">
-<!-- Customisation Options (Author only) -->
 <div id="customOptions" class="hidden">
 <h2>Customisation</h2>
 <label>Change Journal Title: </label>
 <input type="text" id="titleInput" placeholder="Enter new title">
 <button onclick="changeTitle()">Update</button><br>
-
 <label>Upload Background Image: </label>
 <input type="file" id="bgInput" accept="image/*"><br>
-
 <label>Upload Background Music (MP3): </label>
 <input type="file" id="musicInput" accept="audio/mpeg"><br>
 </div>
 
-<!-- Post Section (Author only) -->
 <div id="postSection" class="hidden">
 <h2>Write a New Entry</h2>
 <textarea id="entryText" placeholder="Write your thoughts..."></textarea><br>
@@ -50,11 +46,9 @@ input[type="file"] { margin:10px 0; }
 <button onclick="saveEntry()">Save Entry</button>
 </div>
 
-<!-- Entries -->
 <div id="entries"></div>
 </div>
 
-<!-- Background Music -->
 <audio id="bgMusic" autoplay loop></audio>
 
 <!-- Firebase SDKs -->
@@ -83,111 +77,111 @@ const bgMusic = document.getElementById("bgMusic");
 
 // --- FIREBASE CONFIG ---
 const firebaseConfig = {
-  apiKey: "AIzaSyDW4gGoDqKjkeQHLYcWFoMCWWRby1pEQJM",
-  authDomain: "allmylovethroughwords.firebaseapp.com",
-  projectId: "allmylovethroughwords",
-  storageBucket: "allmylovethroughwords.firebasestorage.app",
-  messagingSenderId: "875011434235",
-  appId: "1:875011434235:web:c265458cf8b0f55127725e",
-  measurementId: "G-4D7EXQQFHZ"
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT_ID.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
 };
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const storage = firebase.storage();
 
 // --- LOGIN ---
 function checkPassword() {
-const input = document.getElementById("password").value;
-if (input === authorPassword) { role="author"; showJournal(true); }
-else if (input === viewerPassword) { role="viewer"; showJournal(false); }
-else alert("Wrong password!");
+  const input = document.getElementById("password").value;
+  if (input === authorPassword) { role="author"; showJournal(true); }
+  else if (input === viewerPassword) { role="viewer"; showJournal(false); }
+  else alert("Wrong password!");
 }
 
 function showJournal(isAuthor) {
-loginDiv.classList.add("hidden");
-journalDiv.classList.remove("hidden");
-if(isAuthor) { postSection.classList.remove("hidden"); customOptions.classList.remove("hidden"); }
-loadEntries();
+  loginDiv.classList.add("hidden");
+  journalDiv.classList.remove("hidden");
+  if(isAuthor) { postSection.classList.remove("hidden"); customOptions.classList.remove("hidden"); }
+  loadEntries();
 }
 
 // --- SAVE ENTRY ---
 function saveEntry() {
-const text = entryText.value.trim();
-if(!text) return alert("Write something first!");
-const files = mediaInput.files;
-const mediaFiles = [];
+  const text = entryText.value.trim();
+  if(!text) return alert("Write something first!");
+  const files = mediaInput.files;
+  const mediaFiles = [];
 
-if(files.length>0){
-const promises = [];
-for(let file of files){
-const path = `media/${Date.now()}_${file.name}`;
-const uploadTask = storage.ref(path).put(file);
-promises.push(uploadTask.then(()=>storage.ref(path).getDownloadURL()).then(url=>mediaFiles.push({type:file.type,data:url})));
-}
-Promise.all(promises).then(()=>saveToFirestore(text, mediaFiles));
-} else {
-saveToFirestore(text, []);
-}
+  if(files.length>0){
+    const promises = [];
+    for(let file of files){
+      const path = `media/${Date.now()}_${file.name}`;
+      const uploadTask = storage.ref(path).put(file);
+      promises.push(uploadTask.then(()=>storage.ref(path).getDownloadURL()).then(url=>mediaFiles.push({type:file.type,data:url})));
+    }
+    Promise.all(promises).then(()=>saveToFirestore(text, mediaFiles));
+  } else {
+    saveToFirestore(text, []);
+  }
 }
 
 function saveToFirestore(text, media) {
-db.collection("entries").add({
-text: text,
-date: new Date().toLocaleString(),
-media: media
-}).then(()=>{
-entryText.value="";
-mediaInput.value="";
-}).catch(err => {
-
+  db.collection("entries").add({
+    text: text,
+    date: new Date().toLocaleString(),
+    media: media
+  }).then(()=>{
+    entryText.value="";
+    mediaInput.value="";
+  }).catch(err => {
     console.error("Error saving entry:", err);
-
     alert("Failed to save entry. Check console for details.");
-
   });
 }
 
 // --- LOAD ENTRIES ---
 function loadEntries(){
-db.collection("entries").orderBy("date","desc").onSnapshot(snapshot=>{
-entriesDiv.innerHTML="";
-snapshot.forEach(doc=>{
-const e = doc.data();
-const div = document.createElement("div");
-div.className="entry";
-div.innerHTML=`<strong>${e.date}</strong><br>${e.text}`;
-if(e.media) e.media.forEach(m=>{
-if(m.type.startsWith("image/")){ const img=document.createElement("img"); img.src=m.data; div.appendChild(img); }
-else if(m.type.startsWith("video/")){ const v=document.createElement("video"); v.src=m.data; v.controls=true; div.appendChild(v); }
-});
-entriesDiv.appendChild(div);
-});
-});
+  db.collection("entries").orderBy("date","desc").onSnapshot(snapshot=>{
+    entriesDiv.innerHTML="";
+    snapshot.forEach(doc=>{
+      const e = doc.data();
+      const div = document.createElement("div");
+      div.className="entry";
+      div.innerHTML=`<strong>${e.date}</strong><br>${e.text}`;
+      if(e.media) e.media.forEach(m=>{
+        if(m.type.startsWith("image/")){ const img=document.createElement("img"); img.src=m.data; div.appendChild(img); }
+        else if(m.type.startsWith("video/")){ const v=document.createElement("video"); v.src=m.data; v.controls=true; div.appendChild(v); }
+      });
+      entriesDiv.appendChild(div);
+    });
+  });
 }
 
 // --- CUSTOMISATION ---
 function changeTitle(){
-const t=document.getElementById("titleInput").value.trim();
-if(t){ siteTitle.textContent=t; document.getElementById("titleInput").value=""; }
+  const t=document.getElementById("titleInput").value.trim();
+  if(t){ siteTitle.textContent=t; document.getElementById("titleInput").value=""; }
 }
 
 // Background Image
 bgInput.addEventListener("change", function(){
-const file = bgInput.files[0];
-if(file){
-const reader = new FileReader();
-reader.onload = ()=>{ document.body.style.background=`url('${reader.result}') no-repeat center center fixed`; document.body.style.backgroundSize="cover"; }
-reader.readAsDataURL(file);
-}
+  const file = bgInput.files[0];
+  if(file){
+    const reader = new FileReader();
+    reader.onload = ()=>{ document.body.style.background=`url('${reader.result}') no-repeat center center fixed`; document.body.style.backgroundSize="cover"; }
+    reader.readAsDataURL(file);
+  }
 });
 
-// Background Music
+// Background Music (local only)
 musicInput.addEventListener("change", function(){
-const file = musicInput.files[0];
-if(file){
-const reader = new FileReader();
-reader.onload = ()=>{ bgMusic.src=reader.result; bgMusic.play(); }
-reader.readAsDataURL(file);
-}
+  const file = musicInput.files[0];
+  if(file){
+    const reader = new FileReader();
+    reader.onload = ()=>{ bgMusic.src=reader.result; bgMusic.play(); }
+    reader.readAsDataURL(file);
+  }
 });
 </script>
 </body>
-
 </html>
